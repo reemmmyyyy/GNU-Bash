@@ -1,0 +1,11 @@
+#!/bin/bash
+
+if [ "$#" != "0" ] ; then
+  if [ -e "$1" ] ; then
+    while true ; do
+      tail "$1"
+      sleep 1s;
+      clear;
+    done
+  fi
+fi

@@ -1,0 +1,49 @@
+#!/bin/bash
+
+## Note: This code assumes Linux OS, equipped with X11 and GNU coreutils. Tested under Debian 9 (Stretch).
+
+if [ "$#" != "0" ] ; then
+ 
+  dontCryPleaseTryAgain=15 # If URL corresponding content isNot available or we have a faulty internet connection, trying the transfer only that number of times per arg.
+  protectionCount=$(( -1 * ( $dontCryPleaseTryAgain * $# ) ))
+
+  itsDone_str_01="saved" ## That simple, nice.
+  itsDone_str_02="fully retrieved"  ## Occurs when retrying to download something fully saved already.
+
+  hits=0
+
+  LogDIR="/tmp/.until.sh.txt-log"
+  mkdir -p "$LogDIR"
+
+  while [ "$hits" != "$#" ] && [ "$protectionCount" != "0" ] ; do
+
+    for arg ; do
+      currentTry="$((1+$protectionCount+$dontCryPleaseTryAgain))"
+      LogFile="$LogDIR/$hits.$currentTry.log.txt"
+      touch "$LogFile"
+      echo -e "\n\n\t\x22$arg\x22\t(Hits:$hits, Try: $currentTry )\n" | tee -a "$LogFile"
+      xterm -T "WGET-Log" -e "until_mon.sh.txt $LogFile" &
+      wget $Warning -c "$arg" -a "$LogFile"
+      if [ "$( cat "$LogFile" | grep -F "$itsDone_str_01" | wc -c )" -gt "0" ]  ; then
+        hits=$(( $hits + 1 ))
+      else
+        if ! [ "$( cat "$LogFile" | grep -F "$itsDone_str_02" | wc -c )" -gt "0" ] ; then ## Transfer. error detection.
+          protectionCount=$(( $protectionCount + 1 ))
+        fi
+      fi
+    done
+
+  done
+
+  if [ "$hits" != "$#" ] && [ "$protectionCount" == "0" ] ; then
+    echo -e "\n\tSorry\x21\x21\x21, ...something went wrong, it might be a typo on your request, a faulty connection to INTERNET, or the requested content was moved to another (set of) address(es).\n"   
+    exit 13
+  fi
+
+  if [ "$hits" == "$#" ] ; then
+    echo -e "All your requests were successfuly processed."
+  fi
+
+fi
+
+## R. J. Cano, Tue Dec 14 05:11:16 UTC 2021
